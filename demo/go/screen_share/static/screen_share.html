@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>1v1 Screen Share Example</title>
+
+<style type="text/css">
+    video{
+        width:320px;
+        height:240px;
+        border:1px solid black;
+    }
+
+    button{
+        background-color: #d84a38;
+        border: none;
+        color: white;
+        margin: 0.1em,0,0;
+        padding: 0.5em 0.7em 0.6em 0.7em;
+    }
+</style>
+
+</head>
+
+<body>
+    <h3>1v1 Screen Share Example</h3>
+
+    <div>
+        <video id="localVideo" autoplay controls></video>
+        <video id="remoteVideo" autoplay controls></video>
+    </div>
+
+    <button id="btnStartPush">开始推流</button>
+    <button id="btnStopPush">停止推流</button>
+    <button id="btnStartPull">开始拉流</button>
+    <button id="btnStopPull">停止拉流</button>
+
+    <script src="/static/js/screen_share.js"></script>
+    <script src="/static/js/adapter.js"></script>
+
+</body>
+
+</html>
