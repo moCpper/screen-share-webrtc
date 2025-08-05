@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"signaling/src/framework"
-	"signaling/src/glog"
+	//"signaling/src/glog"
 )
 
 func main(){
@@ -14,9 +14,6 @@ func main(){
 	if err != nil {
 		panic(err)
 	}
-
-	glog.Info("hello")
-	glog.Flush()
 
 	err = framework.StartHttp()
 	if err != nil {

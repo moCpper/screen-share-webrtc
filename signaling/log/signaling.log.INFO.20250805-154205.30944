@@ -1,0 +1,5 @@
+Log file created at: 2025/08/05 15:42:05
+Running on machine: LAPTOP-71AV808L
+Binary: Built with gc go1.23.3 for linux/amd64
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I0805 15:42:05.707256   30944 log.go:53] logId[2778359185] url[/xrtcclient/push] referer[] ua[Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/138.0.0.0 Safari/537.36 Edg/138.0.0.0] clientIP[[::1]:47192] realClientIP[[::1]:47192] 

@@ -1,0 +1,5 @@
+Log file created at: 2025/08/05 14:28:26
+Running on machine: LAPTOP-71AV808L
+Binary: Built with gc go1.23.3 for linux/amd64
+Log line format: [IWEF]mmdd hh:mm:ss.uuuuuu threadid file:line] msg
+I0805 14:28:26.763674   16096 main.go:18] hello2

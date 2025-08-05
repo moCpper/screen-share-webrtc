@@ -98,7 +98,7 @@ type severity int32 // sync/atomic int32
 // A message written to a high-severity log file is also written to each
 // lower-severity log file.
 const (
-	debuglog serverity = iota // Debug logs are not used in this package.
+	debugLog severity = iota // Debug logs are not used in this package.
 	infoLog
 	warningLog
 	errorLog
@@ -186,7 +186,7 @@ var Stats struct {
 }
 
 var severityStats = [numSeverity]*OutputStats{
-	DebugLog:  &Stats.Debug,
+	debugLog:  &Stats.Debug,
 	infoLog:   &Stats.Info,
 	warningLog: &Stats.Warning,
 	errorLog:   &Stats.Error,
@@ -399,7 +399,7 @@ type flushSyncWriter interface {
 }
 
 func SetLogToStderr(value bool){
-	logging.toStderr = value
+	logging.alsoToStderr = value
 }
 
 func SetLogLevel(level string){
@@ -888,7 +888,7 @@ func (l *loggingT) createFiles(sev severity) error {
 	return nil
 }
 
-const flushInterval = 30 * time.Second
+const flushInterval = 30 * time.Millisecond
 
 // flushDaemon periodically flushes the log file buffers.
 func (l *loggingT) flushDaemon() {
@@ -1062,8 +1062,30 @@ func (v Verbose) Infof(format string, args ...interface{}) {
 	}
 }
 
-// Info logs to the INFO log.
+// Debug logs to the DEBUG log.
 // Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
+func Debug(args ...interface{}) {
+	logging.print(debugLog, args...)
+}
+
+// InfoDepth acts as Info but uses depth to determine which call frame to log.
+// InfoDepth(0, "msg") is the same as Info("msg").
+func DebugDepth(depth int, args ...interface{}) {
+	logging.printDepth(debugLog, depth, args...)
+}
+
+// Infoln logs to the INFO log.
+// Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
+func Debugln(args ...interface{}) {
+	logging.println(debugLog, args...)
+}
+
+// Debugf logs to the DEBUG log.
+// Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
+func Debugf(format string, args ...interface{}) {
+	logging.printf(debugLog, format, args...)
+}
+
 func Info(args ...interface{}) {
 	logging.print(infoLog, args...)
 }
