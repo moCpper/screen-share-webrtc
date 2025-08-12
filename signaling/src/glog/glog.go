@@ -98,7 +98,7 @@ type severity int32 // sync/atomic int32
 // A message written to a high-severity log file is also written to each
 // lower-severity log file.
 const (
-	debugLog severity = iota // Debug logs are not used in this package.
+	debugLog severity = iota
 	infoLog
 	warningLog
 	errorLog
@@ -109,7 +109,7 @@ const (
 const severityChar = "DIWEF"
 
 var severityName = []string{
-	debugLog: "DEBUG",
+	debugLog:   "DEBUG",
 	infoLog:    "INFO",
 	warningLog: "WARNING",
 	errorLog:   "ERROR",
@@ -182,12 +182,12 @@ func (s *OutputStats) Bytes() int64 {
 // Stats tracks the number of lines of output and number of bytes
 // per severity level. Values must be read with atomic.LoadInt64.
 var Stats struct {
-	Debug,Info, Warning, Error OutputStats
+	Debug, Info, Warning, Error OutputStats
 }
 
 var severityStats = [numSeverity]*OutputStats{
-	debugLog:  &Stats.Debug,
-	infoLog:   &Stats.Info,
+	debugLog:   &Stats.Debug,
+	infoLog:    &Stats.Info,
 	warningLog: &Stats.Warning,
 	errorLog:   &Stats.Error,
 }
@@ -398,11 +398,11 @@ type flushSyncWriter interface {
 	io.Writer
 }
 
-func SetLogToStderr(value bool){
+func SetLogToStderr(value bool) {
 	logging.alsoToStderr = value
 }
 
-func SetLogLevel(level string){
+func SetLogLevel(level string) {
 	logging.stderrThreshold.Set(level)
 }
 
@@ -1068,24 +1068,26 @@ func Debug(args ...interface{}) {
 	logging.print(debugLog, args...)
 }
 
-// InfoDepth acts as Info but uses depth to determine which call frame to log.
-// InfoDepth(0, "msg") is the same as Info("msg").
+// DebugDepth acts as Debug but uses depth to determine which call frame to log.
+// DebugDepth(0, "msg") is the same as Debug("msg").
 func DebugDepth(depth int, args ...interface{}) {
 	logging.printDepth(debugLog, depth, args...)
 }
 
-// Infoln logs to the INFO log.
+// Debugln logs to the DEBUG log.
 // Arguments are handled in the manner of fmt.Println; a newline is appended if missing.
 func Debugln(args ...interface{}) {
 	logging.println(debugLog, args...)
 }
 
-// Debugf logs to the DEBUG log.
+// Debugf logs to the Debug log.
 // Arguments are handled in the manner of fmt.Printf; a newline is appended if missing.
 func Debugf(format string, args ...interface{}) {
 	logging.printf(debugLog, format, args...)
 }
 
+// Info logs to the INFO log.
+// Arguments are handled in the manner of fmt.Print; a newline is appended if missing.
 func Info(args ...interface{}) {
 	logging.print(infoLog, args...)
 }

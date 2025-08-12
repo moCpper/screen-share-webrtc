@@ -1,0 +1,12 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include
+
+Name: absl_profile_builder
+Description: Abseil profile_builder library
+URL: https://abseil.io/
+Version: head
+Requires: absl_config = head, absl_core_headers = head, absl_raw_logging_internal = head, absl_flat_hash_map = head, absl_btree = head, absl_strings = head, absl_span = head
+Libs: -L${libdir}  -labsl_profile_builder 
+Cflags: -I${includedir} -DNOMINMAX

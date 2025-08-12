@@ -56,6 +56,15 @@
     <button id="pushBtn">开始推流</button>
     <button id="stopPushBtn">停止推流</button>
 
+    <input type="hidden" id="uid" value="{{.uid}}"/>
+    <input type="hidden" id="streamName" value="{{.streamName}}"/>
+    <input type="hidden" id="audio" value="{{.audio}}"/>
+    <input type="hidden" id="video" value="{{.video}}"/>
+
+    <script src="/static/js/adapter.js"></script>
+    <script src="/static/js/jquery-2.1.1.min.js"></script>
+    <script src="/static/js/push.js"></script>
+
 </body>
 
 </html>

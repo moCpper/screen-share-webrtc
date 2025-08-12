@@ -1,0 +1,12 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=/usr/local/lib
+includedir=/usr/local/include
+
+Name: absl_log_internal_structured_proto
+Description: Abseil log_internal_structured_proto library
+URL: https://abseil.io/
+Version: head
+Requires: absl_log_internal_proto = head, absl_config = head, absl_span = head, absl_strings = head, absl_variant = head
+Libs: -L${libdir}  -labsl_log_internal_structured_proto 
+Cflags: -I${includedir} -DNOMINMAX

@@ -1,14 +1,13 @@
 package framework
 
-
-import(
-	"signaling/src/glog"
-	"math/rand"
-    "time"
+import (
 	"fmt"
+	"math/rand"
+	"signaling/src/glog"
+	"time"
 )
 
-func init(){
+func init() {
 	rand.Seed(time.Now().Unix())
 }
 
@@ -16,82 +15,82 @@ func GetLogId32() uint32 {
 	return rand.Uint32()
 }
 
-type logItem struct{
+type logItem struct {
 	field string
 	value string
 }
 
-type timeItem struct{
-	field string
+type timeItem struct {
+	field     string
 	beginTime int64
-	endTime int64
+	endTime   int64
 }
 
-type ComLog struct{
+type ComLog struct {
 	mainLog []logItem
 	timeLog []timeItem
 }
 
-func (l *ComLog) AddNotice(field,value string){
+func (l *ComLog) AddNotice(field, value string) {
 	item := logItem{
 		field: field,
 		value: value,
 	}
 
-	l.mainLog = append(l.mainLog,item)
+	l.mainLog = append(l.mainLog, item)
 }
 
-func (l *ComLog) TimeBegin(field string){
+func (l *ComLog) TimeBegin(field string) {
 	item := timeItem{
-		field: field,
+		field:     field,
 		beginTime: time.Now().UnixNano() / 1000,
 	}
 
-	l.timeLog = append(l.timeLog,item)
+	l.timeLog = append(l.timeLog, item)
 }
 
-func (l *ComLog) TimeEnd(field string){
-	for k,v := range l.timeLog{
-		if v.field == field{
+func (l *ComLog) TimeEnd(field string) {
+	for k, v := range l.timeLog {
+		if v.field == field {
 			l.timeLog[k].endTime = time.Now().UnixNano() / 1000
 			break
 		}
 	}
 }
 
-func (l *ComLog) getPrefixLog() string{
+func (l *ComLog) getPrefixLog() string {
 	prefixLog := ""
 
-	// main log
-	for _, item := range l.mainLog{
-		prefixLog += fmt.Sprintf("%s[%s] ",item.field,item.value)
+	// mainLog
+	for _, item := range l.mainLog {
+		prefixLog += fmt.Sprintf("%s[%s] ", item.field, item.value)
 	}
 
-	// time log
-	for _, timeItem := range l.timeLog{
+	// timeLog
+	for _, timeItem := range l.timeLog {
 		diff := timeItem.endTime - timeItem.beginTime
-	    if diff < 0 {
+		if diff < 0 {
 			continue
 		}
 
 		fdiff := float64(diff) / 1000.0
-		prefixLog += fmt.Sprintf("%s[%.3fms] ",timeItem.field,fdiff)
+		prefixLog += fmt.Sprintf("%s[%.3fms] ", timeItem.field, fdiff)
 	}
 
 	return prefixLog
 }
 
-func (l *ComLog) Debugf(format string,args ...interface{}){
+func (l *ComLog) Debugf(format string, args ...interface{}) {
 	totalLog := l.getPrefixLog() + format
-	glog.Debugf(totalLog,args...)
+	glog.Debugf(totalLog, args...)
 }
 
-func (l *ComLog) Infof(format string,args ...interface{}){
+func (l *ComLog) Infof(format string, args ...interface{}) {
 	totalLog := l.getPrefixLog() + format
-	glog.Infof(totalLog,args...)
+	glog.Infof(totalLog, args...)
 }
 
-func (l *ComLog) Warningf(format string,args ...interface{}){
+func (l *ComLog) Warningf(format string, args ...interface{}) {
 	totalLog := l.getPrefixLog() + format
-	glog.Warningf(totalLog,args...)
+	glog.Warningf(totalLog, args...)
 }

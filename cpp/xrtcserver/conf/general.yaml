@@ -1,0 +1,6 @@
+log:
+  log_dir: log
+  log_name: xrtcserver
+  # verbose info warning error debug
+  log_level: verbose
+  log_to_stderr: true

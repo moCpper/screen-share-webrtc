@@ -1,0 +1,42 @@
+# .gitignore
+
+# 忽略所有 log 目录下的文件
+signaling/log/*
+!signaling/log/.gitkeep  # 保留空目录占位文件（可选）
+
+# 忽略 build.sh 的行尾符警告
+build.sh                 # 将其设为二进制文件避免转换
+
+# 其他常见忽略项
+*.log
+*.tmp
+*.swp
+.DS_Store
+.idea/
+.vscode/signaling/log/*
+*.log
+*.INFO
+*.WARNING
+
+# 静态库文件
+**/*.a
+/*.a
+
+# 其他编译产物
+*.o
+*.so
+*.dylib
+*.exe
+
+# 构建目录
+build/
+bin/
+out/
+
+# IDE 文件
+.vscode/
+.idea/
+
+# 系统文件
+.DS_Store
+Thumbs.db

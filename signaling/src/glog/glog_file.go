@@ -40,11 +40,11 @@ var logDirs []string
 // See createLogDirs for the full list of possible destinations.
 var logDir = flag.String("log_dir", "", "If non-empty, write log files in this directory")
 
-func SetLogDir(name string){
+func SetLogDir(name string) {
 	*logDir = name
 }
 
-func SetLogFileName(name string){
+func SetLogFileName(name string) {
 	logFilename = name
 }
 
@@ -56,11 +56,11 @@ func createLogDirs() {
 }
 
 var (
-	pid      = os.Getpid()
-	program  = filepath.Base(os.Args[0])
+	pid         = os.Getpid()
+	program     = filepath.Base(os.Args[0])
 	logFilename = program
-	host     = "unknownhost"
-	userName = "unknownuser"
+	host        = "unknownhost"
+	userName    = "unknownuser"
 )
 
 func init() {
