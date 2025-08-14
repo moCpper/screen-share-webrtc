@@ -1,6 +1,10 @@
 # .gitignore
 
 # 忽略所有 log 目录下的文件
+cpp/xrtcserver/3rdlibs/libev/.libs/
+cpp/xrtcserver/3rdlibs/libev/.deps/
+*/*.la
+*/*.lo
 signaling/log/*
 !signaling/log/.gitkeep  # 保留空目录占位文件（可选）
 
