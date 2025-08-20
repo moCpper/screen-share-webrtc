@@ -7,12 +7,14 @@ add_definitions("-g -pipe -W -Wall -std=gnu++14 -DWEBRTC_POSIX -DWEBRTC_LINUX")
 include_directories(
     "./src"
     "./3rdlibs/yaml-cpp/include"
+    "./3rdlibs/libev/build/include"
     "../rtcbase/src"
     "../rtcbase/third_party/include"
 )
 
 link_directories(
     "./3rdlibs/yaml-cpp/lib"
+    "./3rdlibs/libev/build/lib"
     "../rtcbase/out"
     "../rtcbase/third_party/lib"
 )
@@ -20,6 +22,7 @@ link_directories(
 file(GLOB all_src 
             "./src/*.cpp"
             "./src/base/*.cpp"
+            "./src/server/*.cpp"
             )
 
 add_executable(xrtcserver ${all_src})
@@ -37,5 +40,6 @@ target_link_libraries(xrtcserver
     librtcbase.a 
     libabsl_strings.a
     libabsl_throw_delegate.a 
+    libev.a
     -lpthread
 )

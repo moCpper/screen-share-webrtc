@@ -35,8 +35,11 @@ struct TimerWatcher{
     bool need_repeat;
 };
 
+// loop: 当前的事件循环实例
+// io: 触发事件的IO观察器
+// events: 触发的事件类型
 static void generic_io_cb(struct ev_loop* loop,struct ev_io* io,int events){
-    IOWatcher* watcher = static_cast<IOWatcher*>(io->data);
+    IOWatcher* watcher = static_cast<IOWatcher*>(io->data);      // io.data = this;
     watcher->cb(watcher->el,watcher,io->fd,TRANS_FROM_EV_MASK(events),watcher->data);
 }
 
@@ -54,7 +57,7 @@ EventLoop::EventLoop(void* owner) :
 EventLoop::~EventLoop(){}
 
 void EventLoop::start(){
-    ev_run(loop_);
+    ev_run(loop_);      // 启动事件循环，等待和处理事件并监控所有已注册的事件(IO、定时器等)
 }
 
 void EventLoop::stop(){
@@ -62,8 +65,8 @@ void EventLoop::stop(){
 }
 
 IOWatcher* EventLoop::create_io_event(io_cb_t cb,void* data){
-    IOWatcher* w = new IOWatcher(this, cb, data);
-    ev_init(&w->io,generic_io_cb);
+    IOWatcher* w = new IOWatcher(this, cb, data);      
+    ev_init(&w->io,generic_io_cb);    
     return w;
 }
 

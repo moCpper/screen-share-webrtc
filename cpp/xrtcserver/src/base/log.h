@@ -32,7 +32,7 @@ public:
     int init();
 
     bool start();
-    void end();
+    void stop();
     void join();
 
     void set_log_to_stderr(bool);
