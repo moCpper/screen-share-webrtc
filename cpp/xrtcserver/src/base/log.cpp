@@ -6,6 +6,7 @@
 namespace xrtc{
 
 XrtcLog::XrtcLog(std::string log_dir,std::string log_name,std::string log_level) :
+    running_(false),
     log_dir_(std::move(log_dir)),
     log_name_(std::move(log_name)),
     log_level_(std::move(log_level)),

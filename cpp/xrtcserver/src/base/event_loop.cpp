@@ -64,6 +64,8 @@ void EventLoop::stop(){
     ev_break(loop_,EVBREAK_ALL);
 }
 
+// 负责初始化观察器并绑定回调。
+// 当有事件发生时，libev会调用你指定的callback.
 IOWatcher* EventLoop::create_io_event(io_cb_t cb,void* data){
     IOWatcher* w = new IOWatcher(this, cb, data);      
     ev_init(&w->io,generic_io_cb);    
@@ -80,7 +82,7 @@ void EventLoop::start_io_event(IOWatcher* w,int fd,int mask){
             return;
         }
 
-        events = TRANS_FROM_EV_MASK(events);
+        events = TRANS_TO_EV_MASK(events);
         ev_io_stop(loop_,io);
         ev_io_set(io,fd,events);
         ev_io_start(loop_,io);
@@ -88,7 +90,7 @@ void EventLoop::start_io_event(IOWatcher* w,int fd,int mask){
         // watcher 尚未开始监听，首次启动
         int events = TRANS_TO_EV_MASK(mask);
         ev_io_set(io,fd,events);
-        ev_io_start(loop_,io);
+        ev_io_start(loop_,io);  // 将观察器注册到事件循环
     }
 }
 

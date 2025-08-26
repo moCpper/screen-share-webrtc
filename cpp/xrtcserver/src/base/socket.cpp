@@ -6,6 +6,25 @@
 
 namespace xrtc{
 
+static int generic_accept(int sock, struct sockaddr* addr, socklen_t* addrlen) {
+    int fd = -1;
+    while(1){
+        fd = accept(sock,addr,addrlen);
+        if (fd < 0) {
+            if(errno == EINTR){    // 系统调用被临时中断
+                continue;
+            }else{
+                RTC_LOG(LS_WARNING) << "accept error, errno : " << errno
+                     << ", error : " << strerror(errno);
+                return -1;
+            }
+        }
+        break;
+    }
+    return fd;
+}
+
+
 int create_tcp_server(const char* addr, int port){
     if(!addr || port <= 0){
         return -1;
@@ -55,6 +74,25 @@ int create_tcp_server(const char* addr, int port){
     }
 
     return sockfd;
+}
+
+int tcp_accept(int sock,char* host,int* port){
+    struct sockaddr_in sa;
+    socklen_t salen = sizeof(sa);
+    int fd = generic_accept(sock,(struct sockaddr*)&sa,&salen);
+    if(fd == -1){
+        return -1;
+    }
+
+    if(host){
+        strcpy(host,inet_ntoa(sa.sin_addr));
+    }
+
+    if(port){
+        *port = ntohs(sa.sin_port);
+    }
+
+    return fd;
 }
 
 }
