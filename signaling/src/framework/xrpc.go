@@ -1,27 +1,29 @@
 package framework
 
 import (
-	"fmt"
-	"signaling/src/xrpc"
-	"strings"
-	"errors"
-	"strconv"
-	"time"
 	"bytes"
 	"encoding/json"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
+	"time"
+	"log"
+
+	"signaling/src/framework/xrpc"
 )
 
 var xrpcClients map[string]*xrpc.Client = make(map[string]*xrpc.Client)
 
-func loadXrpc() error{
+func loadXrpc() error {
 	sections := configFile.GetSectionList()
-	
+
 	for _, section := range sections {
 		if !strings.HasPrefix(section, "xrpc.") {
 			continue
 		}
 
-		mSection ,err := configFile.GetSection(section)
+		mSection, err := configFile.GetSection(section)
 		if err != nil {
 			return err
 		}
@@ -33,26 +35,27 @@ func loadXrpc() error{
 		}
 
 		arrServer := strings.Split(values, ",")
-		for i,server := range arrServer {
+		for i, server := range arrServer {
 			arrServer[i] = strings.TrimSpace(server)
 		}
-		
-		client := xrpc.NewClient(arrServer)
 
-		if values, ok := mSection["connectTimeout"]; ok{
-			if connectTimeout,err := strconv.Atoi(values); err == nil{
+		client := xrpc.NewClient(arrServer)
+		log.Printf("[%s] 服务器地址列表: %v", section, arrServer)
+
+		if values, ok := mSection["connectTimeout"]; ok {
+			if connectTimeout, err := strconv.Atoi(values); err == nil {
 				client.ConnectTimeout = time.Duration(connectTimeout) * time.Millisecond
 			}
 		}
 
-		if values, ok := mSection["readTimeout"]; ok{
-			if readTimeout,err := strconv.Atoi(values); err == nil{
+		if values, ok := mSection["readTimeout"]; ok {
+			if readTimeout, err := strconv.Atoi(values); err == nil {
 				client.ReadTimeout = time.Duration(readTimeout) * time.Millisecond
 			}
 		}
 
-		if values, ok := mSection["writeTimeout"]; ok{
-			if writeTimeout,err := strconv.Atoi(values); err == nil{
+		if values, ok := mSection["writeTimeout"]; ok {
+			if writeTimeout, err := strconv.Atoi(values); err == nil {
 				client.WriteTimeout = time.Duration(writeTimeout) * time.Millisecond
 			}
 		}
@@ -63,12 +66,13 @@ func loadXrpc() error{
 	return nil
 }
 
-func Call(serviceName string,request interface{},response interface{},logId uint32) error{
+func Call(serviceName string, request interface{}, response interface{},
+	logId uint32) error {
 	fmt.Println("call " + serviceName)
 
-	client, ok := xrpcClients["xrpc." + serviceName]
+	client, ok := xrpcClients["xrpc."+serviceName]
 	if !ok {
-		return fmt.Errorf("xrpc client for service %s not found", serviceName)
+		return fmt.Errorf("[%s] service not found", serviceName)
 	}
 
 	content, err := json.Marshal(request)
@@ -77,13 +81,14 @@ func Call(serviceName string,request interface{},response interface{},logId uint
 	}
 
 	req := xrpc.NewRequest(bytes.NewReader(content), logId)
-
-	resp,err := client.Do(req)
+	//log.Printf("\n11111111111111111111111111111111111111111111111\n")
+	resp, err := client.Do(req)
 	if err != nil {
+		//log.Printf("\n2222222222222222224444444444444444444444\n")
 		return err
 	}
 
 	fmt.Println(resp)
 
-	return nil // Placeholder for actual implementation
+	return nil
 }

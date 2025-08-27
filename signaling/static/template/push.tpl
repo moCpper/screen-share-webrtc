@@ -2,26 +2,26 @@
 
 <html>
 <head>
-    <meta charset="uft-8">
+    <meta charset="utf-8">
     <title>1v1屏幕共享-推流端</title>
 
     <style type="text/css">
-        body{
+        body {
             font-size: 13px;
         }
         
-        .highlight{
+        .highlight {
             background-color: #eeeeee;
             margin: 0 0 5px 0;
             padding: 0.5em 1.5em;
         }
         
-        video:{
+        video {
             width: 480px;
             height: 360px;
         }
-
-        button{
+        
+        button {
             background-color: #d84a38;
             border: none;
             border-radius: 2px;
@@ -29,8 +29,8 @@
             margin: 5px 0 0 0;
             padding: 0.5em 0.7em 0.6em 0.7em;
         }
-
-        button:hover{
+        
+        button:hover {
             background-color: #cf402f;
         }
 
@@ -55,7 +55,7 @@
 
     <button id="pushBtn">开始推流</button>
     <button id="stopPushBtn">停止推流</button>
-
+    
     <input type="hidden" id="uid" value="{{.uid}}"/>
     <input type="hidden" id="streamName" value="{{.streamName}}"/>
     <input type="hidden" id="audio" value="{{.audio}}"/>

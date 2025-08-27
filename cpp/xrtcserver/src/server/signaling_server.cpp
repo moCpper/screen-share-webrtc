@@ -38,7 +38,12 @@ static void accept_new_conn(EventLoop* el,IOWatcher* w,int fd, int events,void* 
     server->dispatch_new_conn(cfd);
 }
 
-SignalingServer::SignalingServer() : el_(new EventLoop(this)),notify_recv_fd_(-1),notify_send_fd_(-1),next_worker_index_(0),is_start_(false){}
+SignalingServer::SignalingServer() : 
+    el_(new EventLoop(this)),
+    notify_recv_fd_(-1),
+    notify_send_fd_(-1),
+    next_worker_index_(0),
+    is_start_(false){}
 
 SignalingServer::~SignalingServer(){
     if(el_){

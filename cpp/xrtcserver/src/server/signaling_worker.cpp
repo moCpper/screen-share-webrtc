@@ -2,7 +2,9 @@
 #include <iostream>
 
 #include "server/signaling_worker.h"
+#include "server/tcp_connection.h"
 #include "rtc_base/logging.h"
+#include "base/socket.h"
 
 namespace xrtc{
 
@@ -17,6 +19,17 @@ static void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,
 
     SignalingWorker* worker = static_cast<SignalingWorker*>(data);
     worker->process_notify(msg);
+}
+
+static void conn_io_cb(EventLoop* /*el*/,IOWatcher* /*w*/,int fd,
+    int events,void* data){
+
+    SignalingWorker* worker = static_cast<SignalingWorker*>(data);
+
+    if(events & EventLoop::READ){
+        worker->read_query(fd);
+    }
+
 }
 
 SignalingWorker::SignalingWorker(int worker_id) 
@@ -57,7 +70,6 @@ bool SignalingWorker::start(){
         el_->start();
         RTC_LOG(LS_INFO) << "SignalingWorker thread stop";
         is_start_ = false;
-        std::cout << "@222222222222222222222222222222" << std::endl;
     });
 
     return true;
@@ -95,6 +107,31 @@ void SignalingWorker::new_conn(int cfd){
     // 处理新连接
     RTC_LOG(LS_INFO) << "SignalingWorker " << worker_id_ 
         << " handle new connection, cfd : " << cfd;
+    
+    if(cfd < 0){
+        RTC_LOG(LS_WARNING) << "connect fd error ! cfd : " << cfd;
+    }
+
+    sock_setnonblock(cfd);
+    sock_setnodelay(cfd);
+
+    std::shared_ptr<TcpConnection> c{std::make_shared<TcpConnection>(cfd)};
+    sock_peer_to_str(cfd,c->ip,&c->port);
+
+    c->io_watcher_ = el_->create_io_event(conn_io_cb,this);
+    el_->start_io_event(c->io_watcher_,cfd,EventLoop::READ);
+
+    if(cfd >= conns_.size()){
+        conns_.resize(cfd + 1);
+    }
+
+    conns_[cfd] = c;     // 保存连接
+
+}
+
+void SignalingWorker::read_query(int cfd){
+    RTC_LOG(LS_INFO) << "SignalingWorker " << worker_id_ 
+        << " read query, cfd : " << cfd;
     
 }
 

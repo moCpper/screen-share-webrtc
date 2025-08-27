@@ -9,12 +9,14 @@
 
 namespace xrtc{
 
-static void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,
-    int events,void* data);
+static void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,int events,void* data);
 
+static void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
+    
 class SignalingWorker{
     friend void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,
     int events,void* data);
+    friend void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
 public:
     enum{
         QUIT = 0,
@@ -35,6 +37,7 @@ private:
     void process_notify(int msg);
     void stop_();
     void new_conn(int cfd);
+    void read_query(int cfd);
 
     int worker_id_;
     EventLoop* el_;
@@ -46,6 +49,8 @@ private:
     std::atomic_bool is_start_;
 
     LockFreeQueue<int> q_conn_;
+
+    std::vector<std::shared_ptr<TcpConnection>> conns_;
 };
 
 }

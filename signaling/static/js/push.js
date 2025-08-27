@@ -1,23 +1,21 @@
 'use strict';
 
-var pushBtn = document.getElementById('pushBtn');
+var pushBtn = document.getElementById("pushBtn");
 
-pushBtn.addEventListener('click', startPush);
+pushBtn.addEventListener("click", startPush);
 
-// 通过id获取对应参数
 var uid = $("#uid").val();
 var streamName = $("#streamName").val();
 var audio = $("#audio").val();
 var video = $("#video").val();
 
-function startPush(){
-    console.log("start push clicked");
+function startPush() {
+    console.log("send push: /signaling/push");
 
-    // 发送post
     $.post("/signaling/push",
-        { "uid": uid, "streamName": streamName, "audio": audio, "video": video },
-        function(data, textStatus){
+        {"uid": uid, "streamName": streamName, "audio": audio, "video": video},
+        function(data, textStatus) {
         },
         "json"
-    )
+    );
 }

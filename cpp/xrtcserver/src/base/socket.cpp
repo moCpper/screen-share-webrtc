@@ -1,6 +1,8 @@
 #include <rtc_base/logging.h>
 #include <unistd.h>
 #include <arpa/inet.h>
+#include <fcntl.h>
+#include <netinet/tcp.h>
 
 #include "base/socket.h" 
 
@@ -11,7 +13,7 @@ static int generic_accept(int sock, struct sockaddr* addr, socklen_t* addrlen) {
     while(1){
         fd = accept(sock,addr,addrlen);
         if (fd < 0) {
-            if(errno == EINTR){    // 系统调用被临时中断
+            if(errno == EINTR){    // 表明系统调用被临时中断
                 continue;
             }else{
                 RTC_LOG(LS_WARNING) << "accept error, errno : " << errno
@@ -23,7 +25,6 @@ static int generic_accept(int sock, struct sockaddr* addr, socklen_t* addrlen) {
     }
     return fd;
 }
-
 
 int create_tcp_server(const char* addr, int port){
     if(!addr || port <= 0){
@@ -93,6 +94,57 @@ int tcp_accept(int sock,char* host,int* port){
     }
 
     return fd;
+}
+
+// 设置sock非阻塞
+int sock_setnonblock(int sock){
+    // 获取现有标志
+    int flags = fcntl(sock, F_GETFL, 0);
+    if(flags == -1){
+        RTC_LOG(LS_WARNING) << "fcntl get flags error, errno : " << errno
+            << ", error : " << strerror(errno);
+        return -1;
+    }
+
+    flags |= O_NONBLOCK;
+    if(fcntl(sock, F_SETFL, flags) == -1){
+        RTC_LOG(LS_WARNING) << "fcntl set flags error, errno : " << errno
+            << ", error : " << strerror(errno);
+        return -1;
+    }
+
+    return 0;
+}
+
+// 禁用Nagle
+int sock_setnodelay(int sock){
+    int yes = 1;
+    if(setsockopt(sock, IPPROTO_TCP, TCP_NODELAY, (char*)&yes, sizeof(yes)) < 0){
+        RTC_LOG(LS_WARNING) << "setsockopt TCP_NODELAY error, errno : " << errno
+            << ", error : " << strerror(errno);
+        return -1;
+    }
+    return 0;
+}
+
+int sock_peer_to_str(int sock, char* ip, int* port){
+    struct sockaddr_in sa;
+    socklen_t salen = sizeof(sa);
+    if(getpeername(sock, (struct sockaddr*)&sa, &salen) < 0){
+        RTC_LOG(LS_WARNING) << "getpeername error, errno : " << errno
+            << ", error : " << strerror(errno);
+        return -1;
+    }
+
+    if(ip){
+        strcpy(ip, inet_ntoa(sa.sin_addr));
+    }
+
+    if(port){
+        *port = ntohs(sa.sin_port);
+    }
+
+    return 0;
 }
 
 }

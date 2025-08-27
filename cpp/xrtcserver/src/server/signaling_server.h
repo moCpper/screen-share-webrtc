@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <thread>
+#include <memory>
 #include <atomic>
 
 #include "base/event_loop.h"
