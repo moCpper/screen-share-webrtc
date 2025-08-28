@@ -21,6 +21,14 @@ type Header struct {
 	BodyLen  uint32
 }
 
+/*
+									Head											  PayLoad				
++--------+----------+---------+------------+-----------+----------+---------+ || +-----------------+
+|   Id   | Version  |  LogId  |  Provider  | MagicNum | Reserved | BodyLen |  ||       Body
++--------+----------+---------+------------+-----------+----------+---------+ || +-----------------+
+| 2Byte  |  2Byte   |  4Byte |   16Byte   |   4Byte  |   4Byte  |  4Byte  |   ||	  BodyLen
++--------+----------+---------+------------+-----------+----------+---------+ || +-----------------+
+*/
 func (h *Header) Marshal(b []byte) error {
 	if len(b) < HEADER_SIZE {
 		return errors.New("no enough buffer for header")

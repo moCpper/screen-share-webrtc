@@ -3,6 +3,8 @@
 
 #include <thread>
 #include <atomic>
+#include <vector>
+#include <memory>
 
 #include "base/event_loop.h"
 #include "base/lock_free_queue.h"
@@ -13,9 +15,9 @@ static void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,int e
 
 static void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
     
+struct TcpConnection;
 class SignalingWorker{
-    friend void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,
-    int events,void* data);
+    friend void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,int events,void* data);
     friend void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
 public:
     enum{

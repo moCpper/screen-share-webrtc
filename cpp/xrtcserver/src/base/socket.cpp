@@ -144,7 +144,25 @@ int sock_peer_to_str(int sock, char* ip, int* port){
         *port = ntohs(sa.sin_port);
     }
 
-    return 0;
+    return 0;   
 }
 
+int sock_read_data(int sock,char* buf,size_t len){
+    int nread = read(sock, buf, len);
+    if(nread < 0){
+        if(errno == EAGAIN){
+            nread = 0;
+        }else{
+            RTC_LOG(LS_WARNING) << "sock read error, errno : " << errno
+                << ", error : " << strerror(errno);
+            return -1;
+        }
+    }else if(nread == 0){
+        RTC_LOG(LS_INFO) << "client connection closed, fd :" << sock;
+        return -1;
+    }
+
+    return nread;
 }
+
+} // namespace xrtc

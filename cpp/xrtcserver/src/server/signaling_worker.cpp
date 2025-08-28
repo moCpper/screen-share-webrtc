@@ -133,6 +133,28 @@ void SignalingWorker::read_query(int cfd){
     RTC_LOG(LS_INFO) << "SignalingWorker " << worker_id_ 
         << " read query, cfd : " << cfd;
     
+    if(cfd < 0 || (size_t)cfd >= conns_.size() || !conns_[cfd]){
+        RTC_LOG(LS_WARNING) << "read_query invalid cfd : " << cfd;
+        return;
+    }
+
+    std::shared_ptr<TcpConnection> c = conns_[cfd];
+
+    int nread = 0;
+    int read_len = c->bytes_expected;    // XHEAD_SIZE
+    int qb_len = sdslen(c->querybuf);
+    
+    c->querybuf = sdsMakeRoomFor(c->querybuf, read_len);
+
+    nread = sock_read_data(cfd,c->querybuf + qb_len, read_len);
+    
+    RTC_LOG(LS_INFO) << "sock read data len : " << nread;
+
+    if(nread == -1){
+        return;
+    }else if(nread > 0){
+        sdsIncrLen(c->querybuf, nread);
+    }
 }
 
 void SignalingWorker::stop_(){
