@@ -8,6 +8,7 @@
 
 #include "base/event_loop.h"
 #include "base/lock_free_queue.h"
+#include "rtc_base/slice.h"
 
 namespace xrtc{
 
@@ -39,7 +40,13 @@ private:
     void process_notify(int msg);
     void stop_();
     void new_conn(int cfd);
+    void close_conn(int cfd);
     void read_query(int cfd);
+    int process_query_buffer(std::shared_ptr<TcpConnection> c);
+    int process_request(std::shared_ptr<TcpConnection> c,
+        const rtc::Slice& header,const rtc::Slice& body);
+    void close_conn(std::shared_ptr<TcpConnection> c);
+    void remove_conn(std::shared_ptr<TcpConnection> c);
 
     int worker_id_;
     EventLoop* el_;

@@ -3,11 +3,17 @@
 
 #include <rtc_base/sds.h>
 
+#include "base/noncopyable.h"
 #include "base/event_loop.h"
 
 namespace xrtc{
 
-struct TcpConnection{
+struct TcpConnection : noncopyable{
+    enum{
+        STATE_HEAD = 0,
+        STATE_BODY = 1
+    };
+
     TcpConnection(int fd);
     ~TcpConnection();
 
@@ -18,6 +24,8 @@ struct TcpConnection{
     sds querybuf;
     size_t bytes_expected;
     size_t bytes_processed;
+
+    int current_state;
 };
 
 

@@ -8,7 +8,8 @@ TcpConnection::TcpConnection(int fd) :
     io_watcher_(nullptr),
     bytes_expected(XHEAD_SIZE), 
     bytes_processed(0),
-    querybuf(sdsempty()) {
+    querybuf(sdsempty()),
+    current_state(STATE_HEAD) {
 
 }
 

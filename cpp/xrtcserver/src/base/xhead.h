@@ -7,7 +7,7 @@
 namespace xrtc {
 
 const int XHEAD_SIZE = 36;
-const uint32_t XHEAD_MAGIC_NUM = 0xfd202202;
+const uint32_t XHEAD_MAGIC_NUM = 0xfb202202;
 
 struct xhead_t {
     uint16_t id;

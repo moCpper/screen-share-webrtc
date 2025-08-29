@@ -1,6 +1,7 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "base/xhead.h"
 #include "server/signaling_worker.h"
 #include "server/tcp_connection.h"
 #include "rtc_base/logging.h"
@@ -147,7 +148,7 @@ void SignalingWorker::read_query(int cfd){
     c->querybuf = sdsMakeRoomFor(c->querybuf, read_len);
 
     nread = sock_read_data(cfd,c->querybuf + qb_len, read_len);
-    
+
     RTC_LOG(LS_INFO) << "sock read data len : " << nread;
 
     if(nread == -1){
@@ -155,6 +156,65 @@ void SignalingWorker::read_query(int cfd){
     }else if(nread > 0){
         sdsIncrLen(c->querybuf, nread);
     }
+
+    int ret = process_query_buffer(c);
+    if(ret != 0){
+        close_conn(c);
+        return;
+    }
+}
+
+void SignalingWorker::close_conn(std::shared_ptr<TcpConnection> c){
+    close(c->cfd);
+    remove_conn(c);
+
+    RTC_LOG(LS_INFO) << "SignalingWorker " << worker_id_ 
+        << " close connection, cfd : " << c->cfd;
+}
+
+void SignalingWorker::remove_conn(std::shared_ptr<TcpConnection> c){
+    el_->delete_io_event(c->io_watcher_);
+    conns_[c->cfd].reset();
+}
+
+int SignalingWorker::process_query_buffer(std::shared_ptr<TcpConnection> c){
+    if(!c){
+        RTC_LOG(LS_WARNING) << "process_query_buffer invalid connection";
+        return -1;
+    }
+
+    while(sdslen(c->querybuf) >= c->bytes_processed + c->bytes_expected) {
+       xhead_t* head = reinterpret_cast<xhead_t*>(c->querybuf);
+       if(c->current_state == TcpConnection::STATE_HEAD){
+           if(XHEAD_MAGIC_NUM != head->magic_num){
+               RTC_LOG(LS_WARNING) << "process_query_buffer invalid magic number";
+               return -1;
+           }
+
+           c->current_state = TcpConnection::STATE_BODY;
+           c->bytes_processed += XHEAD_SIZE;
+           c->bytes_expected = head->body_len;
+
+       }else{
+           rtc::Slice header(c->querybuf, XHEAD_SIZE);
+           rtc::Slice body(c->querybuf + XHEAD_SIZE, head->body_len);
+           int ret = process_request(c,header,body);
+           if(ret != 0){
+               return -1;
+           }
+
+           // 短链接处理
+           c->bytes_processed = 65535;
+       }
+    }
+
+    return 0;
+}
+
+int SignalingWorker::process_request(std::shared_ptr<TcpConnection> c,const rtc::Slice& header,const rtc::Slice& body){
+    RTC_LOG(LS_INFO) << "receive body :" << body.data();
+
+    return 0;
 }
 
 void SignalingWorker::stop_(){

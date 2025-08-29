@@ -1,2 +1,8 @@
 WARNING: [000:000][101331] (src/main.cpp:55): test444444444444444444
 WARNING: [000:001][110844] (src/server/signaling_server.cpp:32): catch a YAML exception,line : 1, column: 7, error : bad conversion
+WARNING: [015:214][9588] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [015:214][9588] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [015:214][9588] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
