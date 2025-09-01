@@ -30,17 +30,38 @@ static void conn_io_cb(EventLoop* /*el*/,IOWatcher* /*w*/,int fd,
     if(events & EventLoop::READ){
         worker->read_query(fd);
     }
-
 }
 
-SignalingWorker::SignalingWorker(int worker_id) 
+static void conn_time_cb(EventLoop* el,TimerWatcher* w,void* data){
+    SignalingWorker* worker = static_cast<SignalingWorker*>(el->owner());
+
+    int cfd = *static_cast<int*>(data);
+
+    worker->process_timeout(cfd);
+}
+
+SignalingWorker::SignalingWorker(int worker_id,const SignalingServerOptions& options) 
     : worker_id_(worker_id),
     is_start_(false),
     el_(new EventLoop(this)),
     notify_recv_fd_(-1),
-    notify_send_fd_(-1){}
+    notify_send_fd_(-1),
+    options_(options){}
 
-SignalingWorker::~SignalingWorker(){}
+SignalingWorker::~SignalingWorker(){
+    for(auto c : conns_){
+        if(c){
+            close_conn(c);
+        }
+    }
+
+    conns_.clear();
+
+    if(el_){
+        delete el_;
+        el_ = nullptr;
+    }
+}
 
 int SignalingWorker::init(){
     int fds[2];
@@ -126,6 +147,11 @@ void SignalingWorker::new_conn(int cfd){
         conns_.resize(cfd + 1);
     }
 
+    c->timer_watcher_ = el_->create_timer(conn_time_cb,&c->cfd,true);       // true 重复定时
+    el_->start_timer(c->timer_watcher_,100000); // 100ms
+
+    c->last_interaction = el_->now();
+
     conns_[cfd] = c;     // 保存连接
 
 }
@@ -148,6 +174,8 @@ void SignalingWorker::read_query(int cfd){
     c->querybuf = sdsMakeRoomFor(c->querybuf, read_len);
 
     nread = sock_read_data(cfd,c->querybuf + qb_len, read_len);
+
+    c->last_interaction = el_->now();
 
     RTC_LOG(LS_INFO) << "sock read data len : " << nread;
 
@@ -173,6 +201,7 @@ void SignalingWorker::close_conn(std::shared_ptr<TcpConnection> c){
 }
 
 void SignalingWorker::remove_conn(std::shared_ptr<TcpConnection> c){
+    el_->delete_timer(c->timer_watcher_);
     el_->delete_io_event(c->io_watcher_);
     conns_[c->cfd].reset();
 }
@@ -239,6 +268,13 @@ void SignalingWorker::join(){
 int SignalingWorker::notify_new_conn(int cfd){
     q_conn_.produce(cfd);
     return notify(NEW_CONN);
+}
+
+void SignalingWorker::process_timeout(int cfd){
+    if(el_->now() - conns_[cfd]->last_interaction > options_.connection_timeout){
+            RTC_LOG(LS_INFO) << "connection timeout fd :" << cfd;
+        close_conn(conns_[cfd]);
+    }
 }
 
 }

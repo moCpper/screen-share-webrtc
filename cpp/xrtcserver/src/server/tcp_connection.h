@@ -21,11 +21,14 @@ struct TcpConnection : noncopyable{
     char ip[64];
     int port;
     IOWatcher* io_watcher_;
+    TimerWatcher* timer_watcher_;
     sds querybuf;
     size_t bytes_expected;
     size_t bytes_processed;
 
     int current_state;
+
+    unsigned long last_interaction = 0;
 };
 
 

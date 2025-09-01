@@ -64,6 +64,14 @@ void EventLoop::stop(){
     ev_break(loop_,EVBREAK_ALL);
 }
 
+void* EventLoop::owner(){
+    return owner_;
+}
+
+unsigned long EventLoop::now(){
+    return static_cast<unsigned long>(ev_now(loop_) * 1000000);
+}
+
 // 负责初始化观察器并绑定回调。
 // 当有事件发生时，libev会调用你指定的callback.
 IOWatcher* EventLoop::create_io_event(io_cb_t cb,void* data){
@@ -129,6 +137,7 @@ void EventLoop::start_timer(TimerWatcher* w,unsigned int usec){
     float sec = float(usec) / 1000000.0f;
 
     if(!w->need_repeat){
+        ev_timer_stop(loop_,timer);
         ev_timer_set(timer,sec,0);
         ev_timer_start(loop_,timer);
     }else{

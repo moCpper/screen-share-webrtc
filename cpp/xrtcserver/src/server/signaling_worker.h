@@ -9,24 +9,26 @@
 #include "base/event_loop.h"
 #include "base/lock_free_queue.h"
 #include "rtc_base/slice.h"
+#include "server/signaling_server.h"
 
 namespace xrtc{
 
 static void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,int events,void* data);
-
 static void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
+static void conn_time_cb(EventLoop* el,TimerWatcher* w,void* data);
     
 struct TcpConnection;
 class SignalingWorker{
     friend void signaling_worker_recv_notify(EventLoop* el,IOWatcher* w,int fd,int events,void* data);
     friend void conn_io_cb(EventLoop* ,IOWatcher* ,int,int,void*);
+    friend void conn_time_cb(EventLoop* el,TimerWatcher* w,void* data);
 public:
     enum{
         QUIT = 0,
         NEW_CONN = 1
     };
 
-    SignalingWorker(int worker_id);
+    SignalingWorker(int worker_id, const SignalingServerOptions& options);
     ~SignalingWorker();
 
     int init();
@@ -47,6 +49,7 @@ private:
         const rtc::Slice& header,const rtc::Slice& body);
     void close_conn(std::shared_ptr<TcpConnection> c);
     void remove_conn(std::shared_ptr<TcpConnection> c);
+    void process_timeout(int cfd);
 
     int worker_id_;
     EventLoop* el_;
@@ -60,6 +63,8 @@ private:
     LockFreeQueue<int> q_conn_;
 
     std::vector<std::shared_ptr<TcpConnection>> conns_;
+
+    SignalingServerOptions options_;
 };
 
 }
