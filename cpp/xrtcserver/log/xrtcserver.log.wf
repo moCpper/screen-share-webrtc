@@ -6,3 +6,4 @@ WARNING: [015:214][9588] (src/server/signaling_worker.cpp:176): process_query_bu
 WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
 WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
 WARNING: [056:123][9589] (src/server/signaling_worker.cpp:176): process_query_buffer invalid magic number
+WARNING: [005:097][76565] (src/server/rtc_server.cpp:70): Received RTC message: 1, uid : 2

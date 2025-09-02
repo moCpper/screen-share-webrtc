@@ -12,6 +12,7 @@ int sock_setnonblock(int sock);
 int sock_setnodelay(int sock);
 int sock_peer_to_str(int sock, char* ip, int* port);
 int sock_read_data(int sock,char* buf,size_t len);
+int sock_write_data(int sock,const char* buf,size_t len);
 
 }
 

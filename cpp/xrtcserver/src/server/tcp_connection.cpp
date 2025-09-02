@@ -9,7 +9,8 @@ TcpConnection::TcpConnection(int fd) :
     bytes_expected(XHEAD_SIZE), 
     bytes_processed(0),
     querybuf(sdsempty()),
-    current_state(STATE_HEAD) {
+    current_state(STATE_HEAD),
+    cur_resp_pos(0) {
 
 }
 

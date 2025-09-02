@@ -5,9 +5,11 @@ project(xrtcserver)
 add_definitions("-g -pipe -W -Wall -std=gnu++14 -DWEBRTC_POSIX -DWEBRTC_LINUX")
 
 include_directories(
+    "./"
     "./src"
     "./3rdlibs/yaml-cpp/include"
     "./3rdlibs/libev/build/include"
+    "./3rdlibs/jsoncpp/include"
     "../rtcbase/src"
     "../rtcbase/third_party/include"
 )
@@ -15,6 +17,7 @@ include_directories(
 link_directories(
     "./3rdlibs/yaml-cpp/lib"
     "./3rdlibs/libev/build/lib"
+    "./3rdlibs/jsoncpp/lib"
     "../rtcbase/out"
     "../rtcbase/third_party/lib"
 )
@@ -41,5 +44,6 @@ target_link_libraries(xrtcserver
     libabsl_strings.a
     libabsl_throw_delegate.a 
     libev.a
+    libjsoncpp.a
     -lpthread
 )

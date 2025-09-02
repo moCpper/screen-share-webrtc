@@ -1,11 +1,16 @@
 #include <unistd.h>
 #include <iostream>
 
+#include "xrtcserver_def.h"
 #include "base/xhead.h"
 #include "server/signaling_worker.h"
 #include "server/tcp_connection.h"
+#include "server/rtc_server.h"
 #include "rtc_base/logging.h"
+#include "rtc_base/zmalloc.h"
 #include "base/socket.h"
+
+extern xrtc::RtcServer* g_rtc_server;
 
 namespace xrtc{
 
@@ -29,6 +34,9 @@ static void conn_io_cb(EventLoop* /*el*/,IOWatcher* /*w*/,int fd,
 
     if(events & EventLoop::READ){
         worker->read_query(fd);
+    }
+    if(events & EventLoop::WRITE){
+        worker->write_reply(fd);
     }
 }
 
@@ -88,9 +96,9 @@ bool SignalingWorker::start(){
     is_start_ = true;
 
     t_ = std::thread([=](){
-        RTC_LOG(LS_INFO) << "SignalingWorker thread run";
+        RTC_LOG(LS_INFO) << "SignalingWorker thread run ,worker_id : " << worker_id_;
         el_->start();
-        RTC_LOG(LS_INFO) << "SignalingWorker thread stop";
+        RTC_LOG(LS_INFO) << "SignalingWorker thread stop ,worker_id : " << worker_id_;
         is_start_ = false;
     });
 
@@ -108,6 +116,79 @@ int SignalingWorker::notify(int msg){
     return written == sizeof(int) ? 0 : -1;
 }
 
+void SignalingWorker::add_reply(std::shared_ptr<TcpConnection> c,const rtc::Slice& reply){
+    c->reply_list.push_back(reply);    
+    el_->start_io_event(c->io_watcher_,c->cfd,EventLoop::WRITE);
+}
+
+void SignalingWorker::response_server_offer(std::shared_ptr<RtcMsg> msg){
+    TcpConnection* c_ptr = static_cast<TcpConnection*>(msg->conn);
+    if(!c_ptr){
+        RTC_LOG(LS_WARNING) << "tcpconnection is null ";
+        return;
+    }
+
+    // 若链接以超时？ 先通过cfd查找tcpconnection是否存在
+    int fd = msg->fd;
+    if(fd <= 0 || (size_t)fd >= conns_.size() || !conns_[fd]){
+        RTC_LOG(LS_WARNING) << "response_server_offer invalid fd : " << fd;
+        return;
+    }
+
+    if(conns_[fd].get() != c_ptr){     // 新的链接，不做处理
+        return;
+    }
+
+    auto c = conns_[fd];
+
+    xhead_t* xh = reinterpret_cast<xhead_t*>(c->querybuf);
+    rtc::Slice header(c->querybuf, XHEAD_SIZE);
+    char* buf = (char*)zmalloc(XHEAD_SIZE + MAX_RES_BUF);
+    if(!buf){
+        RTC_LOG(LS_WARNING) << "zmalloc error ";
+        return;
+    }
+
+    memcpy(buf, header.data(), XHEAD_SIZE);
+    xhead_t* res_xh = reinterpret_cast<xhead_t*>(buf);
+
+    Json::Value res_root;
+    res_root["err_no"] = msg->err_no;
+    if(msg->err_no != 0){
+        res_root["err_msg"] = "process error";
+        res_root["offer"] = "";
+    }else{
+        res_root["err_msg"] = "process success";
+        res_root["offer"] = msg->sdp;
+    }
+
+    Json::StreamWriterBuilder write_builder;
+    write_builder.settings_["indentation"] = "";
+    std::string json_data = Json::writeString(write_builder,res_root);
+    RTC_LOG(LS_INFO) << "response json data : " << json_data;
+
+    res_xh->body_len = json_data.size();
+    snprintf(buf + XHEAD_SIZE,MAX_RES_BUF,"%s",json_data.c_str());
+
+    rtc::Slice reply(buf,XHEAD_SIZE + res_xh->body_len);
+    add_reply(c,reply);
+}
+
+void SignalingWorker::process_rtc_msg(){
+    auto msg = pop_msg();
+    if(!msg){
+        return;
+    }
+    switch(msg->cmdno){
+        case CMDNO_PUSH:
+            response_server_offer(msg);
+            break;
+        default:
+            RTC_LOG(LS_WARNING) << "SignalingWorker unknown rtc msg cmdno : " << msg->cmdno;
+            break;
+    }
+}
+
 void SignalingWorker::process_notify(int msg){
     switch(msg){
         case QUIT:
@@ -118,6 +199,9 @@ void SignalingWorker::process_notify(int msg){
             if(q_conn_.consume(&fd)){
                 new_conn(fd);
             }
+            break;
+        case RTC_MSG:
+            process_rtc_msg();
             break;
         default:
             RTC_LOG(LS_WARNING) << "SignalingWorker unknown msg : " << msg;
@@ -153,7 +237,6 @@ void SignalingWorker::new_conn(int cfd){
     c->last_interaction = el_->now();
 
     conns_[cfd] = c;     // 保存连接
-
 }
 
 void SignalingWorker::read_query(int cfd){
@@ -180,6 +263,7 @@ void SignalingWorker::read_query(int cfd){
     RTC_LOG(LS_INFO) << "sock read data len : " << nread;
 
     if(nread == -1){
+        close_conn(c);
         return;
     }else if(nread > 0){
         sdsIncrLen(c->querybuf, nread);
@@ -189,6 +273,41 @@ void SignalingWorker::read_query(int cfd){
     if(ret != 0){
         close_conn(c);
         return;
+    }
+}
+
+void SignalingWorker::write_reply(int fd){
+    if(fd <= 0 || (size_t)fd >= conns_.size() || !conns_[fd]){
+        RTC_LOG(LS_WARNING) << "write_reply invalid fd : " << fd;
+        return;
+    }  
+
+    auto c = conns_[fd];
+    if(!c){return;}
+
+    while(!c->reply_list.empty()){
+        rtc::Slice reply = c->reply_list.front();
+        int nwritten = sock_write_data(c->cfd, reply.data() + c->cur_resp_pos, reply.size() - c->cur_resp_pos);
+        if(nwritten < 0){
+            close_conn(c);
+            return;
+        }else if(nwritten == 0){
+            RTC_LOG(LS_WARNING) << "written zero bytes,fd : " << c->cfd;
+        }else if((nwritten + c->cur_resp_pos) >= reply.size()){
+            // 写入完成
+            c->reply_list.pop_front();
+            zfree((void*)reply.data());
+            c->cur_resp_pos = 0;
+            RTC_LOG(LS_INFO) << "write finished, fd : " << c->cfd << "worker id : " << worker_id_;
+        }else{
+            c->cur_resp_pos += nwritten;
+        }
+    }
+
+    c->last_interaction = el_->now();
+    if(c->reply_list.empty()){
+        el_->stop_io_event(c->io_watcher_,c->cfd,EventLoop::WRITE);
+        RTC_LOG(LS_INFO) << "stop write event , fd: " << c->cfd << ",worker_id : " << worker_id_; 
     }
 }
 
@@ -243,7 +362,90 @@ int SignalingWorker::process_query_buffer(std::shared_ptr<TcpConnection> c){
 int SignalingWorker::process_request(std::shared_ptr<TcpConnection> c,const rtc::Slice& header,const rtc::Slice& body){
     RTC_LOG(LS_INFO) << "receive body :" << body.data();
 
+    const xhead_t* xh = reinterpret_cast<const xhead_t*>(header.data());
+
+    Json::CharReaderBuilder builder;
+    std::unique_ptr<Json::CharReader> reader(builder.newCharReader());
+
+    Json::Value root;
+    JSONCPP_STRING err;
+
+    if (!reader->parse(body.data(), body.data() + body.size(), &root, &err)) {
+        RTC_LOG(LS_WARNING) << "process_request parse json failed, fd : " << c->cfd << "error is : " << err << "log_id : " << xh->log_id;
+        return -1;
+    }
+
+    int cmdno;
+
+    try{
+        cmdno = root["cmdno"].asInt();
+
+    }catch(Json::Exception& e){
+        RTC_LOG(LS_WARNING) << "no cmdno , log_id : " << xh->log_id;
+        return -1;
+    }
+
+    switch(cmdno){
+        case CMDNO_PUSH:
+            return process_push(cmdno,c,root,xh->log_id);
+            break;
+        case CMDNO_PULL:
+            // handle pull
+            break;
+        case CMDNO_ANSWER:
+            // handle answer
+            break;
+        case CMDNO_STOPPUSH:
+            // handle stop push
+            break;
+        case CMDNO_STOPPULL:
+            // handle stop pull
+            break;
+        default:
+            RTC_LOG(LS_WARNING) << "process_request unknown cmdno, fd : " << c->cfd << "log_id : " << xh->log_id;
+            return -1;
+    }
+
     return 0;
+}
+
+int SignalingWorker::process_push(int cmdno,std::shared_ptr<TcpConnection> c,const Json::Value& root,uint32_t log_id){
+    RTC_LOG(LS_INFO) << "process_push, fd : " << c->cfd << " log_id : " << log_id;
+
+    uint64_t uid;
+    std::string stream_name;
+    int audio;
+    int video;
+
+    try{
+        uid = root["uid"].asUInt64();
+        stream_name = root["stream_name"].asString();
+        audio = root["audio"].asInt();
+        video = root["video"].asInt();
+
+    }catch(Json::Exception& e){
+        RTC_LOG(LS_WARNING) << "process_push parse json failed, fd : " << c->cfd << "error is : " << e.what() << "log_id : " << log_id;
+        return -1;
+    }
+
+    RTC_LOG(LS_INFO) << "process_push, uid : " << uid 
+        << ", stream_name : " << stream_name 
+        << ", audio : " << audio 
+        << ", video : " << video 
+        << ", log_id : " << log_id;
+
+    std::shared_ptr<RtcMsg> msg = std::make_shared<RtcMsg>();
+    msg->cmdno = cmdno;
+    msg->uid = uid;
+    msg->stream_name = stream_name;
+    msg->audio = audio;
+    msg->video = video;
+    msg->log_id = log_id;
+    msg->worker = this;
+    msg->conn = c.get();
+    msg->fd = c->cfd;
+
+    return g_rtc_server->send_rtc_msg(msg);
 }
 
 void SignalingWorker::stop_(){
@@ -275,6 +477,30 @@ void SignalingWorker::process_timeout(int cfd){
             RTC_LOG(LS_INFO) << "connection timeout fd :" << cfd;
         close_conn(conns_[cfd]);
     }
+}
+
+int SignalingWorker::send_rtc_msg(std::shared_ptr<RtcMsg> msg){
+    if(!msg){
+        return -1;
+    }
+
+    push_msg(msg);
+    return notify(RTC_MSG);
+}
+
+void SignalingWorker::push_msg(std::shared_ptr<RtcMsg> msg){
+    std::unique_lock<std::mutex> lock(q_msg_mtx_);
+    rtc_msg_queue_.push(msg);
+}
+
+std::shared_ptr<RtcMsg> SignalingWorker::pop_msg(){
+    std::unique_lock<std::mutex> lock(q_msg_mtx_);
+    if(rtc_msg_queue_.empty()){
+        return nullptr;
+    }
+    auto msg = rtc_msg_queue_.front();
+    rtc_msg_queue_.pop();
+    return msg;
 }
 
 }

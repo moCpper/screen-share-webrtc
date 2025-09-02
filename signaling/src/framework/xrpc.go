@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"log"
 
 	"signaling/src/framework/xrpc"
 )
@@ -40,7 +39,6 @@ func loadXrpc() error {
 		}
 
 		client := xrpc.NewClient(arrServer)
-		log.Printf("[%s] 服务器地址列表: %v", section, arrServer)
 
 		if values, ok := mSection["connectTimeout"]; ok {
 			if connectTimeout, err := strconv.Atoi(values); err == nil {
@@ -81,14 +79,15 @@ func Call(serviceName string, request interface{}, response interface{},
 	}
 
 	req := xrpc.NewRequest(bytes.NewReader(content), logId)
-	//log.Printf("\n11111111111111111111111111111111111111111111111\n")
 	resp, err := client.Do(req)
 	if err != nil {
-		//log.Printf("\n2222222222222222224444444444444444444444\n")
 		return err
 	}
 
-	fmt.Println(resp)
+	err = json.Unmarshal(resp.Body, response)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }

@@ -41,6 +41,7 @@ public:
 
 private:
    void process_notify(int msg);
+   
    void stop_();
    int create_worker(int worker_id);
    void dispatch_new_conn(int cfd);

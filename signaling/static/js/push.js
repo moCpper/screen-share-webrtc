@@ -15,6 +15,12 @@ function startPush() {
     $.post("/signaling/push",
         {"uid": uid, "streamName": streamName, "audio": audio, "video": video},
         function(data, textStatus) {
+            console.log("push response: " + JSON.stringify(data));
+            if ("success" == textStatus && 0 == data.errNo) {
+                $("#tips1").html("<font color='blue'>推流请求成功!</font>");
+            } else {
+                $("#tips1").html("<font color='red'>推流请求失败!</font>");
+            }
         },
         "json"
     );

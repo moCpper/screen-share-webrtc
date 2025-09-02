@@ -49,7 +49,9 @@
             video={{.video}}
         </span>
     </div>
-    <div>
+    <span id="tips1"></span>
+    
+    <div style="margin-top:5px">
         <video id="localVideo" controls autoplay></video>
     </div>
 

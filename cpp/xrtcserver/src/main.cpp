@@ -4,10 +4,12 @@
 #include "base/conf.h"
 #include "base/log.h"
 #include "server/signaling_server.h"
+#include "server/rtc_server.h"
 
 xrtc::GeneralConf* g_general_conf = nullptr;
 xrtc::XrtcLog* g_log = nullptr;
 xrtc::SignalingServer* g_signaling_server = nullptr;
+xrtc::RtcServer* g_rtc_server = nullptr;
 
 int init_general_conf(const char* filename) {
     if(!filename) {
@@ -55,6 +57,16 @@ int init_signaling_server() {
     return 0;
 }
 
+int init_rtc_server(){
+    g_rtc_server = new xrtc::RtcServer();
+    int ret =  g_rtc_server->init("./conf/rtc_server.yaml");
+    if (ret != 0) {
+        return -1;
+    }
+
+    return 0;
+}
+
 int main() {
     int ret = init_general_conf("./conf/general.yaml");
     if(ret != 0) {
@@ -68,8 +80,18 @@ int main() {
         return -1;
     }
 
+    ret = init_rtc_server();
+    if(ret != 0){
+        return -1;
+    }
+
     g_signaling_server->start();
+
+    g_rtc_server->start();
+
     g_signaling_server->join();
+
+    g_rtc_server->join();
 
     return 0;
 }

@@ -53,9 +53,9 @@ private:
     std::ofstream out_file_wf_;
 
     std::queue<std::string> log_queue_;
-    std::mutex log_mtx_;
+    mutable std::mutex log_mtx_;
     std::queue<std::string> log_queue_wf_;
-    std::mutex log_wf_mtx_;
+    mutable std::mutex log_wf_mtx_;
 
     std::thread t_;
     std::atomic_bool running_;

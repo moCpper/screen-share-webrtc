@@ -1,8 +1,10 @@
 #ifndef __TCP_CONNECTION_H__
 #define __TCP_CONNECTION_H__
 
-#include <rtc_base/sds.h>
+#include <list>
 
+#include "rtc_base/sds.h"
+#include "rtc_base/slice.h"
 #include "base/noncopyable.h"
 #include "base/event_loop.h"
 
@@ -27,8 +29,10 @@ struct TcpConnection : noncopyable{
     size_t bytes_processed;
 
     int current_state;
-
     unsigned long last_interaction = 0;
+
+    std::list<rtc::Slice> reply_list;
+    size_t cur_resp_pos;
 };
 
 

@@ -179,7 +179,7 @@ void SignalingServer::join(){
 }
 
 int SignalingServer::create_worker(int worker_id){
-    RTC_LOG(LS_INFO) << "create worker";
+    RTC_LOG(LS_INFO) << "signalingserver create worker , worker_id : " << worker_id;
 
     SignalingWorker* worker = new SignalingWorker(worker_id,options_);
 
